@@ -46,11 +46,31 @@
                 </div>
             </section>
 
+            <script>
+                function allowDrop(ev) {
+                    ev.preventDefault();
+                }
+
+                function drag(ev) {
+                    ev.dataTransfer.setData("text", ev.target.id);
+                }
+
+                function drop(ev) {
+                    ev.preventDefault();
+                    var data = ev.dataTransfer.getData("text");
+                    ev.target.appendChild(document.getElementById(data));
+                }
+            </script>
+
             <section class="directories">
                 <div class="row">
                     {{#each directories}}
 						<div class="col-sm-6 col-xs-12 col-md-4">
-							<div class="card card-block folder" onclick="location.href='{{this.url}}';">
+							<div class="card card-block folder"
+                                 onclick="location.href='{{this.url}}';"
+                                 draggable="true"
+                                 ondragover="allowDrop(event)"
+                                 ondrop="drop(event)">
 								<strong class="card-title-directory">
 									<i class="fa fa-folder" aria-hidden="true"></i> {{this.name}}
 								</strong>
@@ -84,8 +104,9 @@
                     {{#each files}}
                         <div class="col-sm-6 col-xs-12 col-md-4">
                             <div class="card file" data-href="/files/file?file={{this.name}}&storageContext={{../storageContext}}"
-                                onMouseOver="document.getElementById('{{this.name}}').innerHTML = writeFileSizePretty({{this.size}})"
-                                onMouseOut= "document.getElementById('{{this.name}}').innerHTML = ''">
+                                 onMouseOver="document.getElementById('{{this.name}}').innerHTML = writeFileSizePretty({{this.size}})"
+                                 onMouseOut= "document.getElementById('{{this.name}}').innerHTML = ''"
+                                 draggable="true">
                                 <div class="openFile">
                                     <div class="card-block">
                                         <div class="card-title">
@@ -122,7 +143,7 @@
                                                 data-method="move"
                                                 data-file-name="{{this.name}}"
                                                 data-file-path="{{this.path}}">
-                                                <!--<i class="fa fa-share"></i>-->
+                                                <i class="fa fa-share"></i>
                                             </a>
                                             <small class="file-info" id="{{this.name}}"></small>
                                         </div>

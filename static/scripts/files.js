@@ -143,12 +143,14 @@ $(document).ready(function() {
         $deleteModal.modal('hide');
     });
 
-    /**$('a[data-method="move"]').on('click', function(e) {
+    $('a[data-method="move"]').on('click', function(e) {
         e.stopPropagation();
         e.preventDefault();
         var $buttonContext = $(this);
 
         $moveModal.modal('show');
+        $moveModal.find('.modal-title').text("Wohin möchtest du '" + $buttonContext.data('file-name') + "' verschieben?");
+
         $moveModal.find('.btn-submit').unbind('click').on('click', function() {
             $.ajax({
                 url: $buttonContext.attr('href'),
@@ -167,7 +169,7 @@ $(document).ready(function() {
 
     $moveModal.find('.close, .btn-close').on('click', function() {
         $moveModal.modal('hide');
-    });**/
+    });
 
     $('.create-directory').on('click', function() {
         $editModal.modal('show');

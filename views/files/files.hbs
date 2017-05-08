@@ -64,7 +64,7 @@
 
             <section class="directories">
                 <div class="row">
-                    {{#each directories}}
+                   {{#each directories}}
 						<div class="col-sm-6 col-xs-12 col-md-4">
 							<div class="card card-block folder"
                                  onclick="location.href='{{this.url}}';"
@@ -165,13 +165,19 @@
 
         {{#embed "lib/components/modal" class="move-modal" title="Verschieben nach:"}}
             {{#content "body"}}
-
+                <div class="modal-body">
+                    <select>
+                     {{#each directories}}
+                         <option value="{{this.name}}">{{this.name}}</option>
+                     {{/each}}
+                    </select>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-close">
                         Abbrechen
                     </button>
 
-                    <button type="submit" class="btn btn-primary btn-submit">
+                    <button type="submit" value="Submit" class="btn btn-primary btn-submit">
                         Verschieben
                     </button>
                 </div>

@@ -178,7 +178,25 @@ router.post('/upload', upload.single('upload'), function (req, res, next) {
     });
 });
 
+// move file
+router.move('/file', function (req, res, next) {
+    const {name, dir = ''} = req.body;
 
+    const basePath = getStorageContext(req, res, {url: req.get('Referrer'), dir});
+    const data = {
+        path: basePath + name,
+        fileType: null,
+        action: null
+    };
+
+    api(req).move('/fileStorage/', {
+        qs: data
+    }).then(_ => {
+        res.sendStatus(200);
+    }).catch(err => {
+        res.status((err.statusCode || 500)).send(err);
+    });
+});
 
 // delete file
 router.delete('/file', function (req, res, next) {

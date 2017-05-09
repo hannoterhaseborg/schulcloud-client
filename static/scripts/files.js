@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
     var $form = $(".form-upload");
     var $progressBar = $('.progress-bar');
     var $progress = $progressBar.find('.bar');
@@ -9,18 +9,17 @@ $(document).ready(function() {
     var $deleteModal = $('.delete-modal');
     var $moveModal = $('.move-modal');
 
-
     var isCKEditor = window.location.href.indexOf('CKEditor=') != -1;
 
     // TODO: replace with something cooler
-    var reloadFiles = function() {
+    var reloadFiles = function () {
         window.location.reload();
     };
 
     function showAJAXError(req, textStatus, errorThrown) {
         $deleteModal.modal('hide');
         $moveModal.modal('hide');
-        if(textStatus==="timeout") {
+        if (textStatus === "timeout") {
             $.showNotification("Zeitüberschreitung der Anfrage", "warn");
         } else {
             $.showNotification(errorThrown, "danger");
@@ -40,7 +39,7 @@ $(document).ready(function() {
     }
 
     $form.dropzone({
-        accept: function(file, done) {
+        accept: function (file, done) {
             // get signed url before processing the file
             // this is called on per-file basis
 
@@ -55,7 +54,8 @@ $(document).ready(function() {
             $.post('/files/file', {
                 path: currentDir + file.name,
                 type: file.type
-            }, function(data) {
+
+            }, function (data) {
                 file.signedUrl = data.signedUrl;
                 done();
             })
@@ -63,31 +63,32 @@ $(document).ready(function() {
         },
         createImageThumbnails: false,
         method: 'put',
-        init: function() {
+        init: function () {
             // this is called on per-file basis
-            this.on("processing", function(file) {
+            this.on("processing", function (file) {
                 this.options.url = file.signedUrl.url;
                 this.options.headers = file.signedUrl.header;
                 $progress.css('width', '0%');
-                $form.fadeOut(50, function(){
+                $form.fadeOut(50, function () {
                     $progressBar.fadeIn(50);
                 });
             });
 
-            this.on("sending", function(file, xhr, formData) {
+
+            this.on("sending", function (file, xhr, formData) {
                 var _send = xhr.send;
-                xhr.send = function() {
+                xhr.send = function () {
                     _send.call(xhr, file);
                 };
             });
 
-            this.on("totaluploadprogress", function(progress) {
+            this.on("totaluploadprogress", function (progress) {
                 $progress.stop().animate({'width': progress + '%'}, {
-                    step: function(now) {
+                    step: function (now) {
                         $percentage.html(Math.ceil(now) + '%');
                     },
-                    complete: function() {
-                        $progressBar.fadeOut(50, function() {
+                    complete: function () {
+                        $progressBar.fadeOut(50, function () {
                             $form.fadeIn(50);
                             reloadFiles();
                         });
@@ -118,7 +119,8 @@ $(document).ready(function() {
     });
 
 
-    $('a[data-method="delete"]').on('click', function(e) {
+
+    $('a[data-method="delete"]').on('click', function (e) {
         e.stopPropagation();
         e.preventDefault();
         var $buttonContext = $(this);
@@ -126,7 +128,8 @@ $(document).ready(function() {
         $deleteModal.modal('show');
         $deleteModal.find('.modal-title').text("Bist du dir sicher, dass du '" + $buttonContext.data('file-name') + "' löschen möchtest?");
 
-        $deleteModal.find('.btn-submit').unbind('click').on('click', function() {
+
+        $deleteModal.find('.btn-submit').unbind('click').on('click', function () {
             $.ajax({
                 url: $buttonContext.attr('href'),
                 type: 'DELETE',
@@ -134,7 +137,8 @@ $(document).ready(function() {
                     name: $buttonContext.data('file-name'),
                     dir: $buttonContext.data('file-path')
                 },
-                success: function(result) {
+
+                success: function (result) {
                     reloadFiles();
                 },
                 error: showAJAXError
@@ -142,7 +146,7 @@ $(document).ready(function() {
         });
     });
 
-    $deleteModal.find('.close, .btn-close').on('click', function() {
+    $deleteModal.find('.close, .btn-close').on('click', function () {
         $deleteModal.modal('hide');
     });
 
@@ -174,23 +178,22 @@ $(document).ready(function() {
      $moveModal.find('.close, .btn-close').on('click', function() {
 		 $moveModal.modal('hide');
 	 });
-
-    $('.create-directory').on('click', function() {
+    $('.create-directory').on('click', function () {
         $editModal.modal('show');
     });
 
-    $('.card.file').on('click', function() {
-        if(isCKEditor) returnFileUrl($(this).data('href'));
+    $('.card.file').on('click', function () {
+        if (isCKEditor) returnFileUrl($(this).data('href'));
     });
 
-    $('.card.file .title').on('click', function(e) {
-        if(isCKEditor) {
+    $('.card.file .title').on('click', function (e) {
+        if (isCKEditor) {
             e.preventDefault();
             returnFileUrl($(this).closest('.card.file').data('href'));
         }
     });
 
-    $editModal.find('.modal-form').on('submit', function(e) {
+    $editModal.find('.modal-form').on('submit', function (e) {
         e.preventDefault();
         $.post('/files/directory', {
             name: $editModal.find('[name="new-dir-name"]').val(),
@@ -200,14 +203,42 @@ $(document).ready(function() {
         }).fail(showAJAXError);
     });
 
-    $modals.find('.close, .btn-close').on('click', function() {
+    $modals.find('.close, .btn-close').on('click', function () {
         $modals.modal('hide');
     });
 
     var returnFileUrl = (fileUrl) => {
         var funcNum = getQueryParameterByName('CKEditorFuncNum');
-        window.opener.CKEDITOR.tools.callFunction( funcNum, fileUrl );
+        window.opener.CKEDITOR.tools.callFunction(funcNum, fileUrl);
         window.close();
     };
 
 });
+
+function writeFileSizePretty(filesize) {
+    var unit;
+    var iterator = 0;
+
+    while (filesize > 1024) {
+        filesize = Math.round((filesize / 1024) * 100) / 100;
+        iterator++;
+    }
+    switch (iterator) {
+        case 0:
+            unit = "B";
+            break;
+        case 1:
+            unit = "KB";
+            break;
+        case 2:
+            unit = "MB";
+            break;
+        case 3:
+            unit = "GB";
+            break;
+        case 4:
+            unit = "TB";
+            break;
+    }
+    return (filesize + unit);
+}

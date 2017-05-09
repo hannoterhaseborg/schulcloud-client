@@ -160,7 +160,8 @@ $(document).ready(function() {
 				type: 'MOVE',
 				data: {
 					name: $buttonContext.data('file-name'),
-					dir: $buttonContext.data('file-path')
+                    destination: $moveModal.find('[name="chosen-single"]').val(),
+                    dir: $buttonContext.data('file-path'),
 				},
 				success: function(result) {
 					reloadFiles();

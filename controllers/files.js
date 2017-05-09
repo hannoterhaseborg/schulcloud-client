@@ -180,11 +180,12 @@ router.post('/upload', upload.single('upload'), function (req, res, next) {
 
 // move file
 router.move('/file', function (req, res, next) {
-    const {name, dir = ''} = req.body;
+    const {name, destination, dir = ''} = req.body;
 
     const basePath = getStorageContext(req, res, {url: req.get('Referrer'), dir});
     const data = {
         path: basePath + name,
+        destination: destination,
         fileType: null,
         action: null
     };

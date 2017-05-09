@@ -222,6 +222,7 @@ function writeFileSizePretty(filesize) {
         filesize = Math.round((filesize / 1024) * 100) / 100;
         iterator++;
     }
+
     switch (iterator) {
         case 0:
             unit = "B";

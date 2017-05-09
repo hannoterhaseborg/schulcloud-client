@@ -119,7 +119,6 @@ $(document).ready(function () {
     });
 
 
-
     $('a[data-method="delete"]').on('click', function (e) {
         e.stopPropagation();
         e.preventDefault();
@@ -164,7 +163,7 @@ $(document).ready(function () {
 				type: 'MOVE',
 				data: {
 					name: $buttonContext.data('file-name'),
-                    destination: $moveModal.find('[name="chosen-single"]').val(),
+                    destination: $moveModal.find('[class="chosen-single"]').text(),
                     dir: $buttonContext.data('file-path'),
 				},
 				success: function(result) {

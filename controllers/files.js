@@ -185,12 +185,12 @@ router.move('/file', function (req, res, next) {
     const basePath = getStorageContext(req, res, {url: req.get('Referrer'), dir});
     const data = {
         path: basePath + name,
-        destination: destination,
+        destination,
         fileType: null,
         action: null
     };
 
-    api(req).move('/fileStorage/', {
+    api(req).patch('/fileStorage/', {
         qs: data
     }).then(_ => {
         res.sendStatus(200);

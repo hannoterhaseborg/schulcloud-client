@@ -163,6 +163,16 @@
                 max-height: 80%;
                 margin-top: 2%;
             }
+            .lightbox video {
+                max-width: 90%;
+                max-height: 80%;
+                margin-top: 2%;
+            }
+            .lightbox audio {
+                max-width: 90%;
+                max-height: 80%;
+                margin-top: 2%;
+            }
 
             .lightbox:target {
                 outline: none;

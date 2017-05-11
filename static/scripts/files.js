@@ -216,11 +216,14 @@ $(document).ready(function () {
 
 function fileViewer(filetype, file) {
     switch (filetype) {
-        case 'image/jpeg':
-            return '<img src=/files/file?download=1&file='+file+'>';
+        case 'image/'+filetype.substr(6, filetype.length) :
+            return ('<img src= "/files/file?download=1&file='+file+'">');
+            break;
+        case 'audio/mp3':
+            return '<audio autoplay controls><source src= "/files/file?download=1&file='+file+'" type="audio/mpeg"> </audio>';
             break;
         case 'video/mp4':
-            return '<video width=90% autoplay controls><source src=/files/file?download=1&file='+file+' type="video/mp4">Your browser does not support the video tag.</video>'
+            return '<video autoplay controls><source src= "/files/file?download=1&file='+file+'" type="video/mp4"></video>'
             break;
     }
     return "Nicht unterstützt";

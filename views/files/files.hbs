@@ -107,7 +107,7 @@
                                  onMouseOut= "document.getElementById('{{this.name}}').innerHTML = ''"
                                  draggable="true">
                                 <div class="openFile">
-                                    <a href="#_" class="lightbox" id="view{{this.name}}" > %</a>
+                                    <a href="#_" class="lightbox" id="view{{this.name}}" onclick="document.getElementById('view{{this.name}}').innerHTML = ''"> %</a>
                                     <a href="#view{{this.name}}"
                                        onclick="document.getElementById('view{{this.name}}').innerHTML = fileViewer('{{this.type}}', '{{this.file}}')  ">
                                     <div class="card-block">

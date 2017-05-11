@@ -214,6 +214,18 @@ $(document).ready(function () {
 
 });
 
+function fileViewer(filetype, file) {
+    switch (filetype) {
+        case 'image/jpeg':
+            return '<img src=/files/file?download=1&file='+file+'>';
+            break;
+        case 'video/mp4':
+            return '<video width=90% autoplay controls><source src=/files/file?download=1&file='+file+' type="video/mp4">Your browser does not support the video tag.</video>'
+            break;
+    }
+    return "Nicht unterstützt";
+}
+
 function writeFileSizePretty(filesize) {
     var unit;
     var iterator = 0;

@@ -21,6 +21,57 @@ function updateQueryStringParameter(uri, key, value) {
     }
 }
 
+function populateModalForm(modal, data) {
+
+    var $title = modal.find('.modal-title');
+    var $btnSubmit = modal.find('.btn-submit');
+    var $btnClose = modal.find('.btn-close');
+    var $form = modal.find('.modal-form');
+
+    $title.html(data.title);
+    $btnSubmit.html(data.submitLabel);
+    $btnClose.html(data.closeLabel);
+
+    if (data.action) {
+        $form.attr('action', data.action);
+    }
+
+    // fields
+    $('[name]', $form).not('[data-force-value]').each(function () {
+        var value = (data.fields || {})[$(this).prop('name').replace('[]', '')] || '';
+        switch ($(this).prop("type")) {
+            case "radio":
+            case "checkbox":
+                $(this).each(function () {
+                    if (($(this).attr('name') == $(this).prop('name')) && value) {
+                        $(this).attr("checked", value);
+                    } else {
+                        $(this).removeAttr("checked");
+                    }
+                });
+                break;
+            case "datetime-local":
+                $(this).val(value.slice(0, 16)).trigger("chosen:updated");
+                break;
+            case "date":
+                $(this).val(value.slice(0, 10)).trigger("chosen:updated");
+                break;
+            case "color":
+                $(this).attr("value", value);
+                $(this).attr("placeholder", value);
+                break;
+            default:
+                if ($(this).prop('nodeName') == "TEXTAREA" && $(this).hasClass("customckeditor")) {
+                    if (CKEDITOR.instances.description) {
+                        CKEDITOR.instances.description.setData(value);
+                    }
+                } else {
+                    $(this).val(value).trigger("chosen:updated");
+                }
+        }
+    });
+}
+
 $(document).ready(function () {
     // notification stuff
     var $notification = $('.notification');
@@ -53,6 +104,19 @@ $(document).ready(function () {
     $('select').not('.no-bootstrap').chosen({
         width: "100%",
         "disable_search": true
+    });
+
+    // collapse toggle
+    $('.collapse-toggle').click(function (e) {
+        var $collapseToggle = $(this);
+        var isCollapsed = $($collapseToggle.attr("href")).attr("aria-expanded");
+        if (!isCollapsed || isCollapsed === 'false') {
+            $collapseToggle.find('.collapse-icon').removeClass("fa-chevron-right");
+            $collapseToggle.find('.collapse-icon').addClass("fa-chevron-down");
+        } else {
+            $collapseToggle.find('.collapse-icon').removeClass("fa-chevron-down");
+            $collapseToggle.find('.collapse-icon').addClass("fa-chevron-right");
+        }
     });
 
 

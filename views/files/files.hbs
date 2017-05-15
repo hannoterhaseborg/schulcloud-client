@@ -46,18 +46,22 @@
             </section>
 
             <script>
+                function dragStart(ev) {
+                    console.log(ev);
+                    ev.dataTransfer.setData("text", event.target.id);
+                }
+
                 function allowDrop(ev) {
                     ev.preventDefault();
                 }
 
-                function drag(ev) {
-                    ev.dataTransfer.setData("text", ev.target.id);
-                }
-
                 function drop(ev) {
                     ev.preventDefault();
-                    var data = ev.dataTransfer.getData("text");
-                    ev.target.appendChild(document.getElementById(data));
+                    var name = ev.dataTransfer.getData("text");
+                    var destination = ev.target.innerText;
+                    //var name = "";
+                    console.log(name);
+                    //console.log(ev);
                 }
             </script>
 
@@ -66,8 +70,8 @@
                    {{#each directories}}
 						<div class="col-sm-6 col-xs-12 col-md-4">
 							<div class="card card-block folder"
+                                 id="{{this.path}}"
                                  onclick="location.href='{{this.url}}';"
-                                 draggable="true"
                                  ondragover="allowDrop(event)"
                                  ondrop="drop(event)">
 								<strong class="card-title-directory">
@@ -105,16 +109,19 @@
                             <div class="card file" data-href="/files/file?file={{this.name}}&storageContext={{../storageContext}}"
                                  onMouseOver="document.getElementById('{{this.name}}').innerHTML = writeFileSizePretty({{this.size}})"
                                  onMouseOut= "document.getElementById('{{this.name}}').innerHTML = ''"
-                                 draggable="true">
+                                 draggable="true"
+                                 ondragstart="dragStart(event)">
                                 <div class="openFile">
                                     <a href="#_" class="lightbox" id="view{{this.name}}" onclick="document.getElementById('view{{this.name}}').innerHTML = ''"> %</a>
-                                    <a href="#view{{this.name}}"
-                                       onclick="document.getElementById('view{{this.name}}').innerHTML = fileViewer('{{this.type}}', '{{this.file}}')  ">
-                                    <div class="card-block">
+                                    <div class="card-block" >
                                         <div class="card-title">
                                             <div class="col-sm-3 no-padding">
-                                                <div class="file-preview"
-                                                     style="background-image: url({{this.thumbnail}})"></div>
+                                                <a href="#view{{this.name}}"
+                                                   onclick="document.getElementById('view{{this.name}}').innerHTML = fileViewer('{{this.type}}', '{{this.file}}')  ">
+                                                    <div class="file-preview"
+                                                         style="background-image: url({{this.thumbnail}})">
+                                                    </div>
+                                                </a>
                                             </div>
                                             <a class="title" href="/files/file?file={{this.file}}" target="_blank">
                                                 {{this.name}}
@@ -150,7 +157,6 @@
                                             <small class="file-info" id="{{this.name}}"></small>
                                         </div>
                                     </div>
-                                    </a>
                                 </div>
                             </div>
                         </div>

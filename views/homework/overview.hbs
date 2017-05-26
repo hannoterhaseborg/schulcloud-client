@@ -138,7 +138,7 @@
                                 {{#ifvalue this.teacherId value=this.currentUser._id}}
                                     {{#each this.actions}}
                                         {{#if this.method}}
-                                                <a class="{{this.class}}"
+                                                <a class="btn btn-secondary btn-sm {{this.class}}"
                                                    href="{{this.link}}"
                                                    target="_blank"
                                                    data-method="delete-material"

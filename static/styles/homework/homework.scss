@@ -8,9 +8,14 @@
     margin: 10px 0 0;
     min-width: 200px;
   }
-  .create {
+  .download{
     float: right;
     margin: 10px 0 0;
+    padding: .5rem 1rem;
+  }
+  .create {
+    float: right;
+    margin: 10px 0 0 10px;
     i {
       display: none;
     }

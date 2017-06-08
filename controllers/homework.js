@@ -238,7 +238,6 @@ const getExportHandlerAll = (service) => {
                 fields = ["name","description","createdAt","updatedAt","availableDate","dueDate"];//,"Abgaben in %","Durchschnittsnote"];
                 fieldNames = ["Titel","Beschreibung","Erstellt am","letzte Bearbeitung","Beginn","Abgabe"];//,"Abgaben in %","Durchschnittsnote"];
                 res.send(json2csv({data: out,fields:fields, fieldNames: fieldNames, del: ';' }));
-                
             }).catch(err => {
                 next(err);
             });

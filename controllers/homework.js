@@ -9,6 +9,7 @@ const api = require('../api');
 const authHelper = require('../helpers/authentication');
 const handlebars = require("handlebars");
 const moment = require("moment");
+const json2csv = require('json2csv');
 
 handlebars.registerHelper('ifvalue', function (conditional, options) {
     if (options.hash.value === conditional) {
@@ -33,13 +34,15 @@ const getActions = (item, path) => {
         {
             link: path + item._id + "/json",
             class: 'btn-edit',
-            icon: 'edit'
+            icon: 'edit',
+            alt: 'bearbeiten'
         },
         {
             link: path + item._id,
             class: 'btn-delete',
             icon: 'trash-o',
-            method: 'delete'
+            method: 'delete',
+            alt: 'löschen'
         }
     ];
 };
@@ -68,12 +71,12 @@ const getCreateHandler = (service) => {
             req.body.courseId = null;
         }
 
-        if(req.body.dueDate) {
+        if (req.body.dueDate) {
             // rewrite german format to ISO
             req.body.dueDate = moment(req.body.dueDate, 'DD.MM.YYYY HH:mm').toISOString();
         }
 
-        if(req.body.availableDate) {
+        if (req.body.availableDate) {
             // rewrite german format to ISO
             req.body.availableDate = moment(req.body.availableDate, 'DD.MM.YYYY HH:mm').toISOString();
         }
@@ -199,6 +202,49 @@ const getDeleteHandler = (service) => {
     };
 };
 
+const getExportHandlerAll = (service) => {
+    return function (req, res, next) {    
+        api(req).get('/homework/', {
+            qs: {
+                $populate: ['courseId'],
+            }
+        }).then(
+            homeworks => {
+                homeworks=homeworks['data'];
+                var out = homeworks.map(function(hw){
+                    var homework = hw;
+                    homework.createdAt = moment(homework.createdAt).format('DD.MM.YYYY HH:mm');
+                    homework.updatedAt = moment(homework.updatedAt).format('DD.MM.YYYY HH:mm');
+                    homework.availableDate = moment(homework.availableDate).format('DD.MM.YYYY HH:mm');
+                    homework.dueDate = moment(homework.dueDate).format('DD.MM.YYYY HH:mm');
+                    homework.description = homework.description.replace(/<\/?[^>]+(>|$)/g, "").trim();
+                    return homework;
+                    
+                    
+                    var avgGrade = 0;
+                    const submissionPromise = getSelectOptions(req, 'submissions', {
+                        homeworkId: homework._id,
+                        $populate: ['homeworkId']
+                    });
+                    Promise.resolve(submissionPromise).then(submissions => {
+                        avgGrade = getAverageRating(submissions, homework.gradeSystem);
+                        console.log(avgGrade);
+                        return homework;
+                    });
+                });
+                //res.setHeader('Content-type', "text/plain");
+                res.setHeader('Content-type', "application/octet-stream");
+                res.setHeader('Content-disposition', 'attachment; filename=homeworks.csv');
+                fields = ["name","description","createdAt","updatedAt","availableDate","dueDate"];//,"Abgaben in %","Durchschnittsnote"];
+                fieldNames = ["Titel","Beschreibung","Erstellt am","letzte Bearbeitung","Beginn","Abgabe"];//,"Abgaben in %","Durchschnittsnote"];
+                res.send(json2csv({data: out,fields:fields, fieldNames: fieldNames, del: ';' }));
+                
+            }).catch(err => {
+                next(err);
+            });
+    };
+};
+
 router.post('/', getCreateHandler('homework'));
 router.patch('/:id/json', getUpdateHandler('homework'));
 router.get('/:id/json', getDetailHandler('homework'));
@@ -210,26 +256,28 @@ router.post('/submit', getCreateHandler('submissions'));
 router.post('/comment', getCreateHandler('comments'));
 router.delete('/comment/:id', getDeleteHandlerR('comments'));
 
+router.get('/export', getExportHandlerAll('homework'));
 
-const splitDate = function(date){
+
+const splitDate = function (date) {
     const dateF = moment(date).format('DD.MM.YYYY');
     const timeF = moment(date).format('HH:mm');
     return {
-        "timestamp":moment(date).valueOf(),
-        "date":dateF,
-        "time":timeF
+        "timestamp": moment(date).valueOf(),
+        "date": dateF,
+        "time": timeF
     };
 };
-const formatremaining = function(dueDate){
+const formatremaining = function (dueDate) {
     let diff = moment.duration(dueDate - Date.now());
     let dueColor, dueString;
     const days = Math.floor(diff.asDays());
-    const hours= diff.hours();
+    const hours = diff.hours();
     if (days <= 5 && diff.asSeconds() > 0) {
         if (days > 1) {
             dueColor = "days";
         }
-        else if (days == 1 || hours> 2) {
+        else if (days == 1 || hours > 2) {
             dueColor = "hours";
         }
         else {
@@ -238,30 +286,40 @@ const formatremaining = function(dueDate){
         dueString = moment(dueDate).fromNow();
     }
     return {
-        "colorClass":dueColor,
-        "str":dueString,
-        "diff":diff,
-        "days":days
+        "colorClass": dueColor,
+        "str": dueString,
+        "diff": diff,
+        "days": days
     };
 };
 // Sortierfunktionen
-const sortbyavailableDate = function(a, b) {
+const sortbyavailableDate = function (a, b) {
     const c = new Date(a.availableDate), d = new Date(b.availableDate);
-    if (c === d) {return 0;}
-    else {return (c < d) ? -1 : 1;}
+    if (c === d) {
+        return 0;
+    }
+    else {
+        return (c < d) ? -1 : 1;
+    }
 };
-const sortbyDueDate = function(a, b) {
+const sortbyDueDate = function (a, b) {
     const c = new Date(a.dueDate), d = new Date(b.dueDate);
-    if (c === d) {return 0;}
-    else {return (c < d) ? -1 : 1;}
+    if (c === d) {
+        return 0;
+    }
+    else {
+        return (c < d) ? -1 : 1;
+    }
 };
-const getAverageRating = function(submissions,gradeSystem){
+const getAverageRating = function (submissions, gradeSystem) {
     // Durchschnittsnote berechnen
     if (submissions.length > 0) {
         // Nur bewertete Abgaben einbeziehen 
-        let submissiongrades = submissions.filter(function(sub){return (sub.grade!=null);});
+        let submissiongrades = submissions.filter(function (sub) {
+            return (sub.grade != null);
+        });
         // Abgaben vorhanden?
-        if(submissiongrades.length > 0){
+        if (submissiongrades.length > 0) {
             // Noten aus Abgabe auslesen (& in Notensystem umwandeln)
             if (gradeSystem) {
                 submissiongrades = submissiongrades.map(function (sub) {
@@ -279,7 +337,7 @@ const getAverageRating = function(submissions,gradeSystem){
             });
             return (ratingsum / submissiongrades.length).toFixed(2);
         }
-    }   
+    }
     return undefined;
 };
 router.all('/', function (req, res, next) {
@@ -300,7 +358,7 @@ router.all('/', function (req, res, next) {
                 // Kursfarbe setzen
                 assignment.color = assignment.courseId.color;
             }
-            
+
             assignment.url = '/homework/' + assignment._id;
             assignment.privateclass = assignment.private ? "private" : ""; // Symbol für Private Hausaufgabe anzeigen?
 
@@ -309,11 +367,11 @@ router.all('/', function (req, res, next) {
             const dueDateArray = splitDate(assignment.dueDate);
             const remainingF = formatremaining(dueDateArray["timestamp"]);
             assignment.dueColor = remainingF["colorClass"];
-            if(remainingF["days"] > 5 || remainingF["diff"] < 0) {
+            if (remainingF["days"] > 5 || remainingF["diff"] < 0) {
                 assignment.fromdate = availableDateArray["date"] + " (" + availableDateArray["time"] + ")";
                 assignment.todate = dueDateArray["date"] + " (" + dueDateArray["time"] + ")";
-            }else{
-                 assignment.dueString = remainingF["str"];
+            } else {
+                assignment.dueString = remainingF["str"];
             }
 
             // alle Abgaben auslesen -> um Statistiken anzeigen zu können
@@ -322,22 +380,25 @@ router.all('/', function (req, res, next) {
                 $populate: ['studentId', 'homeworkId']
             });
             Promise.resolve(submissionPromise).then(submissions => {
-                if(assignment.teacherId === res.locals.currentUser._id){  //teacher
-                    let submissionLength = submissions.filter(function(n){return n.comment != undefined && n.comment != "";}).length;
+                if (assignment.teacherId === res.locals.currentUser._id) {  //teacher
+                    let submissionLength = submissions.filter(function (n) {
+                        return n.comment;
+                    }).length;
                     assignment.submissionStats = submissionLength + "/" + assignment.userIds.length;
-                    assignment.submissionStatsPerc = Math.round((submissionLength/assignment.userIds.length)*100);
+                    assignment.submissionStatsPerc = (assignment.userIds.length) ? Math.round((submissionLength / assignment.userIds.length) * 100) : 0;
                     let submissionCount = (submissions.filter(function (a) {
-                        return (a.gradeComment != '' || a.grade != null);
+                        return ((a.gradeComment && a.gradeComment != '') || (a.grade && a.grade != null));
                     })).length;
-
                     assignment.gradedStats = submissionCount + "/" + assignment.userIds.length;               // Anzahl der Abgaben
-                    assignment.gradedStatsPerc = Math.round((submissionCount/assignment.userIds.length)*100); // -||- in Prozent
+                    assignment.gradedStatsPerc = (assignment.userIds.length) ? Math.round((submissionCount / assignment.userIds.length) * 100) : 0; // -||- in Prozent
 
                     assignment.averageRating = getAverageRating(submissions, assignment.courseId.gradeSystem);
 
-                }else{ //student
-                    const submission = submissions.filter(function (n) {return n.studentId._id == res.locals.currentUser._id;})[0];  // Abgabe des Schuelers heraussuchen
-                    if (submission != null && submission.comment != ""){ // Abgabe vorhanden?
+                } else { //student
+                    const submission = submissions.filter(function (n) {
+                        return n.studentId._id == res.locals.currentUser._id;
+                    })[0];  // Abgabe des Schuelers heraussuchen
+                    if (submission && submission.comment !== "") { // Abgabe vorhanden?
                         assignment.dueColor = "submitted";
                     }
                 }
@@ -348,29 +409,30 @@ router.all('/', function (req, res, next) {
             return assignment;
         });
 
-        let sortmethods = getSortmethods();
         // Hausaufgaben sortieren
-        if(req.query.sort){
-            const sorting = JSON.parse(req.query.sort);
+        
+        let sortmethods = getSortmethods();
+        let sorting = req.query.sort;
+        if (sorting) {
             // Aktueller Sortieralgorithmus für Anzeige aufbereiten
-            sortmethods = sortmethods.map(function(e){
-                if(e.functionname == sorting.fn){
+            sortmethods = sortmethods.map(function (e) {
+                if (e.functionname == sorting) {
                     e.active = 'selected';
-                    e.desc = sorting.desc;
-                }else{
+                } else {
                     delete e['active'];
                 }
                 return e;
             });
-            // Hausaufgaben nach gewähltem Algorithmus sortieren
-            if(sorting.fn == "availableDate"){
+            // Sortieren der Aufgaben
+            if (sorting == "availableDate") {
                 assignments.sort(sortbyavailableDate);
-            }else if(sorting.fn == "dueDate"){
+            } else if (sorting == "dueDate") {
                 assignments.sort(sortbyDueDate);
-            } 
-            if(sorting.desc){
-                assignments.reverse();
             }
+        }
+        let desc = (req.query.desc == "true");
+        if (desc){
+            assignments.reverse();
         }
 
         const coursesPromise = getSelectOptions(req, 'courses', {
@@ -393,8 +455,28 @@ router.all('/', function (req, res, next) {
                 if (roles.indexOf('student') == -1) {
                     isStudent = false;
                 }
+
                 // Render Overview
-                res.render('homework/overview', {title: 'Meine Aufgaben', assignments, courses, isStudent, sortmethods});
+                //Pagination in client, because filters are in afterhook
+                const itemsPerPage = 10;
+                const currentPage = parseInt(req.query.p) || 1;
+                let pagination = {
+                    currentPage,
+                    numPages: Math.ceil(assignments.length / itemsPerPage),
+                    baseUrl: '/homework/?p={{page}}'
+                };
+                const end = currentPage * itemsPerPage;
+                assignments = assignments.slice(end - itemsPerPage, end);
+                //Render overview
+                res.render('homework/overview', {
+                    title: 'Meine Aufgaben',
+                    pagination,
+                    assignments,
+                    courses,
+                    isStudent,
+                    sortmethods,
+                    desc
+                });
             });
         });
     });
@@ -415,7 +497,7 @@ router.get('/:assignmentId', function (req, res, next) {
             if (assignment.courseId == null) {
                 assignment.color = "#1DE9B6";
                 assignment.private = true;
-            }else {
+            } else {
                 // Kursfarbe setzen
                 assignment.color = assignment.courseId.color;
             }
@@ -440,18 +522,29 @@ router.get('/:assignmentId', function (req, res, next) {
             // Abgabenübersicht anzeigen (Lehrer || publicSubmissions) -> weitere Daten berechnen
             if (assignment.teacherId == res.locals.currentUser._id && assignment.courseId != null || assignment.publicSubmissions) {
                 // Anzahl der Abgaben -> Statistik in Abgabenübersicht
-                assignment.submissionsCount = submissions.filter(function(n){return n.comment != undefined && n.comment != "";}).length;
+                assignment.submissionsCount = submissions.filter(function (n) {
+                    return n.comment;
+                }).length;
                 assignment.averageRating = getAverageRating(submissions, assignment.courseId.gradeSystem);
 
                 //generate select options for grades @ evaluation.hbs
-                submissions.map(function(sub){
-                    const grades = (assignment.courseId.gradeSystem)?["1+","1","1-","2+","2","2-","3+","3","3-","4+","4","4-","5+","5","5-","6"]:["15","14","13","12","11","10","9","8","7","6","5","4","3","2","1"];
+                const grades = (assignment.courseId.gradeSystem) ? ["1+", "1", "1-", "2+", "2", "2-", "3+", "3", "3-", "4+", "4", "4-", "5+", "5", "5-", "6"] : ["15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1", "0"];
+
+                let defaultOptions = "";
+                for (let i = 15; i >= 0; i--) {
+                    defaultOptions += ('<option value="' + i + '">' + grades[15 - i] + '</option>');
+                }
+                assignment.gradeOptions = defaultOptions;
+                submissions.map(function (sub) {
                     let options = "";
-                    for(let i = 15; i > 0; i--){    
-                        options += ('<option value="'+i+'" '+((sub.grade == i)?"selected ":"")+'>'+grades[15-i]+'</option>');
+                    for (let i = 15; i >= 0; i--) {
+                        options += ('<option value="' + i + '" ' + ((sub.grade == i) ? "selected " : "") + '>' + grades[15 - i] + '</option>');
                     }
                     sub.gradeOptions = options;
-                    sub.gradeText = ((assignment.courseId.gradeSystem)?"Note: ":"Punkte: ")+grades[15-sub.grade];
+                    sub.gradeText = (sub.grade) ?   (
+                            ((assignment.courseId.gradeSystem) ? "Note: " : "Punkte: ") + grades[15 - sub.grade]
+                        ):(
+                            (sub.gradeComment) ? '<i class="fa fa-check green" aria-hidden="true"></i>' : "");
                     return sub;
                 });
 
@@ -525,16 +618,46 @@ router.get('/:assignmentId', function (req, res, next) {
 
                 });
             } else {
-                res.render('homework/assignment', Object.assign({}, assignment, {
-                    title: (assignment.courseId == null) ? assignment.name : (assignment.courseId.name + ' - ' + assignment.name),
-                    breadcrumb: [
-                        {
-                            title: 'Meine Aufgaben',
-                            url: '/homework'
-                        },
-                        {}
-                    ]
-                }));
+                // Kommentare zu Abgaben auslesen
+                if(assignment.submission){
+                    const commentPromise = getSelectOptions(req, 'comments', {
+                        submissionId: {$in: assignment.submission._id},
+                        $populate: ['author']
+                    });
+                    Promise.resolve(commentPromise).then(comments => {
+                        // -> Kommentare stehen nun in comments
+                        // alle Kurse von aktuellem Benutzer auslesen
+                        const coursesPromise = getSelectOptions(req, 'courses', {
+                            $or: [
+                                {userIds: res.locals.currentUser._id},
+                                {teacherIds: res.locals.currentUser._id}
+                            ]
+                        });
+                        res.render('homework/assignment', Object.assign({}, assignment, {
+                            title: (assignment.courseId == null) ? assignment.name : (assignment.courseId.name + ' - ' + assignment.name),
+                            breadcrumb: [
+                                {
+                                    title: 'Meine Aufgaben',
+                                    url: '/homework'
+                                },
+                                {}
+                            ],
+                            comments
+                        }));
+                    });
+                }else{
+                   res.render('homework/assignment', Object.assign({}, assignment, {
+                            title: (assignment.courseId == null) ? assignment.name : (assignment.courseId.name + ' - ' + assignment.name),
+                            breadcrumb: [
+                                {
+                                    title: 'Meine Aufgaben',
+                                    url: '/homework'
+                                },
+                                {}
+                            ]
+                        }
+                    )); 
+                }
             }
         });
     });

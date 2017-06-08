@@ -211,8 +211,8 @@ const getExportHandlerAll = (service) => {
         }).then(
             homeworks => {
                 homeworks=homeworks['data'];
-                var out = homeworks.map(function(hw){
-                    var homework = hw;
+                // format output
+                var out = homeworks.map(function(homework){
                     homework.createdAt = moment(homework.createdAt).format('DD.MM.YYYY HH:mm');
                     homework.updatedAt = moment(homework.updatedAt).format('DD.MM.YYYY HH:mm');
                     homework.availableDate = moment(homework.availableDate).format('DD.MM.YYYY HH:mm');
@@ -220,23 +220,26 @@ const getExportHandlerAll = (service) => {
                     homework.description = homework.description.replace(/<\/?[^>]+(>|$)/g, "").trim();
                     return homework;
                     
-                    
-                    var avgGrade = 0;
-                    const submissionPromise = getSelectOptions(req, 'submissions', {
-                        homeworkId: homework._id,
-                        $populate: ['homeworkId']
-                    });
-                    Promise.resolve(submissionPromise).then(submissions => {
-                        avgGrade = getAverageRating(submissions, homework.gradeSystem);
-                        console.log(avgGrade);
-                        return homework;
-                    });
                 });
-                //res.setHeader('Content-type', "text/plain");
+                
+                // NOT WORKING - calculate avgGrade
+                /*
+                var avgGrade = 0;
+                const submissionPromise = getSelectOptions(req, 'submissions', {
+                    homeworkId: homework._id,
+                    $populate: ['homeworkId']
+                });
+                Promise.resolve(submissionPromise).then(submissions => {
+                    avgGrade = getAverageRating(submissions, homework.gradeSystem);
+                    console.log(avgGrade);
+                    return homework;
+                });*/
+                
+                // OUTPUT .csv file
                 res.setHeader('Content-type', "application/octet-stream");
                 res.setHeader('Content-disposition', 'attachment; filename=homeworks.csv');
-                fields = ["name","description","createdAt","updatedAt","availableDate","dueDate"];//,"Abgaben in %","Durchschnittsnote"];
-                fieldNames = ["Titel","Beschreibung","Erstellt am","letzte Bearbeitung","Beginn","Abgabe"];//,"Abgaben in %","Durchschnittsnote"];
+                fields =        ["name" ,"description" ,"createdAt"  ,"updatedAt"         ,"availableDate","dueDate"];//,"avgGrade"];
+                fieldNames =    ["Titel","Beschreibung","Erstellt am","letzte Bearbeitung","Beginn"       ,"Abgabe"];//,"Durchschnittsnote"];
                 res.send(json2csv({data: out,fields:fields, fieldNames: fieldNames, del: ';' }));
             }).catch(err => {
                 next(err);

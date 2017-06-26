@@ -35,25 +35,12 @@ $(document).ready(function () {
 		e.preventDefault();
 		var entry = $(this).attr('href');
 		var query = $('.search-field');
-
 		$.getJSON(entry, function (result) {
-
-            var fields = result.content.data.attributes;
-            fields.query = query.val();
-
-            if(window.isInline) {
-                window.opener.addResource({
-                	url: fields.url,
-                    title: fields.title,
-					description: fields.description,
-                    client: fields.client
-				});
-                window.close();
-                return;
-            }
+			var fields = result.content.data.attributes;
+			fields.query = query.val();
 
 			populateModalForm($editModal, {
-				title: 'Material zu Thema hinzufügen',
+				title: 'Material zu Stunde hinzufügen',
 				closeLabel: 'Schließen',
 				submitLabel: 'Senden',
 				fields: fields
@@ -61,7 +48,6 @@ $(document).ready(function () {
 			populateCourseSelection($editModal, result.courses.data);
 			$editModal.modal('show');
 		});
-
 	});
 
 	$('.course-selection').on('change', function () {

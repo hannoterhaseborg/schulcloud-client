@@ -53,30 +53,6 @@ $(document).ready(function () {
         modal.find('.new-custom-field-add').click(addNewCustomField.bind(this, modal));
     };
 
-    /**
-     * posts a (non-lti) local tool to the server
-     * @param modal {Modal} - the modal which has the post-action and the courseId
-     * @param tool {object} - the tool which will be created
-     */
-    var createLocalTool = function (modal, tool) {
-        var $modalForm = modal.find('.modal-form');
-        var href = $modalForm.attr('action');
-        var courseId = $modalForm.find("input[name='courseId']").val();
-        // cleaning
-        tool.isTemplate = false;
-        tool.courseId = courseId;
-        delete tool._id;
-
-        $.ajax({
-            action: href,
-            data: tool,
-            method: 'POST',
-            success: function(result) {
-                window.location.href = "/courses/" + courseId;
-            }
-        });
-    };
-
     /**var populateCourseSelection = function (modal, courses) {
         var $selection = modal.find('.course-selection');
         courses.forEach(function (course) {
@@ -92,17 +68,14 @@ $(document).ready(function () {
         e.preventDefault();
         var entry = $(this).attr('href');
         $.getJSON(entry, function (result) {
-            if (result.tool.isLocal) {
-                createLocalTool($editModal, result.tool);
-            } else {
-                populateModalForm($editModal, {
-                    closeLabel: 'Schließen',
-                    submitLabel: 'Speichern',
-                    fields: result.tool
-                });
-                populateCustomFields($editModal, result.tool.customs);
-                $editModal.modal('show');
-            }
+            populateModalForm($editModal, {
+                closeLabel: 'Schließen',
+                submitLabel: 'Speichern',
+                fields: result.tool
+            });
+            //populateCourseSelection($editModal, result.courses.data);
+            populateCustomFields($editModal, result.tool.customs);
+            $editModal.modal('show');
         });
     });
 

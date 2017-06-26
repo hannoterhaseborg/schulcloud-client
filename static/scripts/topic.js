@@ -11,9 +11,6 @@ class TopicBlockWrapper extends React.Component {
      */
     constructor(props) {
         super(props);
-        this.state = {
-            onBeforeRemoveCallbacks: []
-        }
     }
 
     /**
@@ -22,7 +19,7 @@ class TopicBlockWrapper extends React.Component {
      */
     updateTitle(event) {
         this.props.onUpdate({
-            title: ((event || {}).target || {}).value
+            title: event.target.value
         });
     }
 
@@ -33,24 +30,6 @@ class TopicBlockWrapper extends React.Component {
         this.props.onUpdate({
             hidden: !this.props.hidden
         });
-    }
-
-
-    addOnBeforeRemoveCallback(cb) {
-        let onBeforeRemoveCallbacks = this.state.onBeforeRemoveCallbacks;
-        onBeforeRemoveCallbacks.push(cb);
-        this.setState({
-            onBeforeRemoveCallbacks
-        });
-    }
-
-    onRemoveWithCallback() {
-        if(this.state.onBeforeRemoveCallbacks.length) {
-            this.state.onBeforeRemoveCallbacks.forEach(cb => {
-                return cb();
-            });
-        }
-        this.props.onRemove();
     }
 
     /**
@@ -73,13 +52,7 @@ class TopicBlockWrapper extends React.Component {
 
                             <span className="input-group-btn">
                                 <i className="fa fa-arrows move-handle" />
-                                <a className="btn btn-secondary hidden-toggle"
-                                   onClick={this.toggleHidden.bind(this)}
-                                   data-toggle="tooltip"
-                                   data-placement="top"
-                                   title={`Abschnitt ${this.props.hidden ? 'entsperren' : 'sperren'}`}
-                                   data-original-title={`Abschnitt ${this.props.hidden ? 'entsperren' : 'sperren'}`}
-                                >
+                                <a className="btn btn-secondary" onClick={this.toggleHidden.bind(this)}>
                                     <i className={`fa fa-eye${this.props.hidden ? '-slash' : ''}`} />
                                 </a>
                             </span>
@@ -107,7 +80,7 @@ class TopicBlockWrapper extends React.Component {
                                     <i className="fa fa-cog"></i>
                                 </button>
                                 <div className="dropdown-menu dropdown-menu-right">
-                                    <a className="dropdown-item text-danger" onClick={this.onRemoveWithCallback.bind(this)}>
+                                    <a className="dropdown-item text-danger" onClick={this.props.onRemove}>
                                         <span><i className="fa fa-trash" /> Entfernen</span>
                                     </a>
                                 </div>
@@ -117,7 +90,7 @@ class TopicBlockWrapper extends React.Component {
                         </div>
                     </div>
                     <div className="card-block">
-                        <this.props.type {...this.props} addOnBeforeRemoveCallback={this.addOnBeforeRemoveCallback.bind(this)} />
+                        <this.props.type {...this.props} />
                     </div>
                 </div>
             </div>
@@ -299,8 +272,7 @@ class TopicBlockList extends React.Component {
                 <div className="form-group">
                     <div className="btn-group" role="group" aria-label="Basic example">
                         <button type="button" className="btn btn-secondary" onClick={this.addBlock.bind(this, TopicText)}>+ Text</button>
-                        <button type="button" className="btn btn-secondary" onClick={this.addBlock.bind(this, TopicGeoGebra)}>+ GeoGebra Arbeitsblatt</button>
-                        <button type="button" className="btn btn-secondary" onClick={this.addBlock.bind(this, TopicResources)}>+ Material</button>
+                        {/* <button type="button" className="btn btn-secondary" onClick={this.addBlock.bind(this, TopicResources)}>Material</button> */}
                     </div>
                 </div>
             </div>
@@ -340,9 +312,6 @@ class TopicBlock extends React.Component {
             case 'resources':
                 return TopicResources;
                 break;
-            case 'geoGebra':
-                return TopicGeoGebra;
-                break;
         }
     }
 }
@@ -359,20 +328,27 @@ class TopicText extends TopicBlock {
      */
     constructor(props) {
         super(props);
-
-        if(!(this.props.content || {}).editorId) {
-            const randomId = Math.random().toString(36).substr(2, 5);
-            this.editorId = `editor_${randomId}`;
-            this.updateText((this.props.content || {}).text);
-        }
+        const randomId = Math.random().toString(36).substr(2, 5);
+        this.editorId = `editor_${randomId}`;
     }
 
     componentDidMount() {
-        const editorId = (this.props.content || {}).editorId || this.editorId;
+        const storageContext = this.getStorageContext();
+        CKEDITOR.replace(this.editorId, {
+            extraPlugins: 'uploadimage',
+            uploadUrl: '/files/upload/?path=' + storageContext,
+            filebrowserBrowseUrl: '/files/' + storageContext,
+            filebrowserUploadUrl: '/files/upload/?path=' + storageContext,
+            filebrowserImageUploadUrl: '/files/upload/?path=' + storageContext,
+            removeDialogTabs: 'link:upload;image:Upload;image:advanced;image:Link'
+        });
+        CKEDITOR.instances[this.editorId].on("change", function () {
+            const data = CKEDITOR.instances[this.editorId].getData();
+            this.updateText(data);
+        }.bind(this));
 
-        this.initEditor();
-
-        CKEDITOR.on( 'dialogDefinition', function( ev ) {
+        CKEDITOR.on( 'dialogDefinition', function( ev )
+        {
             var dialogName = ev.data.name;
             var dialogDefinition = ev.data.definition;
             ev.data.definition.resizable = CKEDITOR.DIALOG_RESIZE_NONE;
@@ -380,6 +356,7 @@ class TopicText extends TopicBlock {
             if ( dialogName == 'link' ) {
                 var infoTab = dialogDefinition.getContents( 'info' );
                 infoTab.remove( 'protocol' );
+                dialogDefinition.removeContents( 'target' );
                 dialogDefinition.removeContents( 'advanced' );
             }
 
@@ -396,39 +373,9 @@ class TopicText extends TopicBlock {
             }
         });
 
-        this.props.addOnSortEndCallback(() => {
-            CKEDITOR.instances[editorId].setData((this.props.content || {}).text);
-        });
-
-        this.props.addOnBeforeRemoveCallback(() => {
-            Object.values(CKEDITOR.instances).forEach(editor => {
-                editor.destroy();
-            });
-        });
-    }
-
-
-    initEditor() {
-        const storageContext = this.getStorageContext();
-
-        const editorId = (this.props.content || {}).editorId || this.editorId;
-
-        CKEDITOR.replace(editorId, {
-            mathJaxLib: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML',
-            extraPlugins: 'uploadimage,mathjax',
-            uploadUrl: '/files/upload/?path=' + storageContext,
-            filebrowserBrowseUrl: '/files/' + storageContext,
-            filebrowserUploadUrl: '/files/upload/?path=' + storageContext,
-            filebrowserImageUploadUrl: '/files/upload/?path=' + storageContext,
-            removeDialogTabs: 'link:upload;image:Upload;image:advanced;image:Link',
-            DefaultLinkTarget: '_blank'
-        });
-
-        CKEDITOR.instances[editorId].on("change", function () {
-            const data = CKEDITOR.instances[editorId].getData();
-            this.updateText(data);
+        this.props.addOnSortEndCallback(function () {
+            CKEDITOR.instances[this.editorId].setData((this.props.content || {}).text);
         }.bind(this));
-
     }
 
 
@@ -455,34 +402,24 @@ class TopicText extends TopicBlock {
      * Keep state in sync with input.
      */
     updateText(event) {
-        const editorId = (this.props.content || {}).editorId || this.editorId;
-        const value = typeof(event) == 'string' ? event : ((event || {}).target || {}).value;
+        const value = typeof(event) == 'string' ? event : event.target.value;
         this.props.onUpdate({
             content: {
-                text: value,
-                editorId: editorId
+                text: value
             }
         });
-    }
-
-    componentDidUpdate() {
-        const editorId = (this.props.content || {}).editorId || this.editorId;
-        if(!CKEDITOR.instances[editorId]) {
-            this.initEditor();
-        }
     }
 
     /**
      * Render the block (an textarea)
      */
     render() {
-        const editorId = (this.props.content || {}).editorId || this.editorId;
         return (
             <div>
                 <textarea
                     className="form-control"
                     rows="10"
-                    id={editorId}
+                    id={this.editorId}
                     onChange={this.updateText.bind(this)}
                     value={(this.props.content || {}).text}
                     name={`contents[${this.props.position}][content][text]`}
@@ -507,45 +444,34 @@ class TopicResource extends React.Component {
     }
 
     /**
+     * Keep state in sync with input.
+     */
+    updateResource(event) {
+        this.props.onUpdate(event.target.value);
+    }
+
+    /**
      * Render the resource field.
      * TODO: show a real resource and not just inputfield
      */
     render() {
         return (
-            <div className="card">
-                <div className="card-block">
-                    <h4 className="card-title">
-                        <a href={(this.props.resource || {}).url} target="_blank">
-                            {(this.props.resource || {}).title}
-                        </a>
-                    </h4>
-                    <p className="card-text">{(this.props.resource || {}).description}</p>
+            <div className="form-group">
+                <div className="input-group">
+                    <input
+                        placeholder="Resources ID"
+                        className="form-control"
+                        type="text"
+                        value={this.props.resource}
+                        onChange={this.updateResource.bind(this)}
+                        name={`contents[${this.props.position}][content][]`}
+                    />
+                    <span className="input-group-btn">
+                        <button className="btn btn-danger btn-remove" type="button" onClick={this.props.onRemove}>
+                            <i className="fa fa-minus" />
+                        </button>
+                    </span>
                 </div>
-                <div className="card-footer">
-                    <small className="text-muted">via {(this.props.resource || {}).client}</small>
-                    <a className="btn-remove-resource" onClick={this.props.onRemove}><i
-                        className="fa fa-minus-square"></i></a>
-                </div>
-                <input
-                    type="hidden"
-                    value={(this.props.resource || {}).url}
-                    name={`contents[${this.props.position}][content][resources][${this.props.index}][url]`}
-                />
-                <input
-                    type="hidden"
-                    value={(this.props.resource || {}).title}
-                    name={`contents[${this.props.position}][content][resources][${this.props.index}][title]`}
-                />
-                <input
-                    type="hidden"
-                    value={(this.props.resource || {}).description}
-                    name={`contents[${this.props.position}][content][resources][${this.props.index}][description]`}
-                />
-                <input
-                    type="hidden"
-                    value={(this.props.resource || {}).client}
-                    name={`contents[${this.props.position}][content][resources][${this.props.index}][client]`}
-                />
             </div>
         );
     }
@@ -577,19 +503,9 @@ class TopicResources extends TopicBlock {
      * @param {string} resource - ID of the resource
      */
     addResource(resource = '') {
-        window.addResource = (resource) => {
-            const resources = this.props.content.resources || [];
-            resources.push(resource);
-            this.updateResources(resources);
-        };
-
-        if(!resource) {
-            // open content search popup
-            const resourcePopup = window.open('/content/?inline=1', "content-search", "toolbar=no, location=no, directories=no, width=800,height=600,status=no,scrollbars=yes,resizable=yes");
-            resourcePopup.focus();
-        } else {
-            window.addResource(resource);
-        }
+        const resources = this.props.content.resources || [];
+        resources.push(resource);
+        this.updateResources(resources);
     }
 
     /**
@@ -632,87 +548,20 @@ class TopicResources extends TopicBlock {
         const resources = (this.props.content || {}).resources || [];
         return (
             <div>
-                <div className="card-columns">
-                    {resources.map((item, index) => {
-                        return (<TopicResource
-                            key={index}
-                            onUpdate={this.updateResource.bind(this, index)}
-                            onRemove={this.removeResource.bind(this, index)}
-                            position={this.props.position}
-                            index={index}
-                            resource={item}
-                        />);
-                    })}
-                </div>
+                {resources.map((item, index) => {
+                    return (<TopicResource
+                        key={index}
+                        onUpdate={this.updateResource.bind(this, index)}
+                        onRemove={this.removeResource.bind(this, index)}
+                        position={this.props.position}
+                        index={index}
+                        resource={item}
+                    />);
+                })}
 
                 <div className="btn-group" role="group" >
                     <button type="button" className="btn btn-secondary btn-add" onClick={this.addResource.bind(this, '')}>+ Material</button>
                 </div>
-            </div>
-        );
-    }
-};
-
-/**
- * Class representing a geo gebra worksheet
- * @extends React.Component
- */
-class TopicGeoGebra extends TopicBlock {
-    /**
-     * Initialize the list.
-     * @param {Object} props - Properties from React Component.
-     */
-    constructor(props) {
-        super(props);
-        const randomId = Math.random().toString(36).substr(2, 5);
-        this.editorId = `editor_${randomId}`;
-    }
-
-    componentDidMount() {
-        $('[data-toggle="tooltip"]').tooltip();
-    }
-
-    /**
-     * This function returns the name of the component that will be used to render the block in view mode.
-     */
-    static get component() {
-        return 'geoGebra';
-    }
-
-    /**
-     * Keep state in sync with input.
-     */
-    updateMaterialId(event) {
-        const value = typeof(event) == 'string' ? event : ((event || {}).target || {}).value;
-        this.props.onUpdate({
-            content: {
-                materialId: value
-            }
-        });
-    }
-
-    /**
-     * Render the block (an textarea)
-     */
-    render() {
-        return (
-            <div className="input-group">
-                <span className="input-group-btn">
-                    <a
-                        className="btn btn-secondary geo-gebra-info"
-                        href="#"
-                        data-toggle="tooltip"
-                        data-placement="top"
-                        title="Die Material-ID finden Sie in der URL zu dem GeoGebra-Arbeitsblatt, was sie online abgespeichert haben. Bei z.B. https://www.geogebra.org/m/e6g4adXp ist die Material-ID 'e6g4adXp'"><i className="fa fa-info-circle" /></a>
-                </span>
-                <input
-                    className="form-control"
-                    id={this.editorId}
-                    onChange={this.updateMaterialId.bind(this)}
-                    value={(this.props.content || {}).materialId}
-                    placeholder="GeoGebra Material-ID eingeben, z.B. kEBfU7AR"
-                    name={`contents[${this.props.position}][content][materialId]`}
-                />
             </div>
         );
     }

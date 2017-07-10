@@ -1,4 +1,6 @@
 const moment = require('moment');
+const api = require('../api');
+const _ = require('lodash');
 
 /**
  * Generates the iso-weekday abbreviation for a given number, e.g. for the Schul-Cloud Calendar-Service
@@ -83,15 +85,94 @@ const createRecurringEvents = (recurringEvent) => {
             end: newEndDate
         });
 
-    } 
+    }
 
     return recurringEvents;
 };
+
+/**
+ * handle recurring events for calendar
+ * @param event {Event} - a event which could contain a recurring value
+ * @returns events [] - new set of events
+ */
+const mapRecurringEvent = (event) => {
+    if (event.included && event.included[0].attributes.freq == 'WEEKLY') {
+        return createRecurringEvents(event);
+    }
+
+    return [event];
+};
+
+/**
+ * maps properties of a event to fit calendar, e.g. url and color
+ * @param event
+ */
+const mapEventProps = (event, req) => {
+    if (event["x-sc-courseId"]) {
+        return api(req).get('/courses/' + event["x-sc-courseId"]).then(course => {
+            event.url = event["x-sc-courseTimeId"] ? '/courses/' + course._id : '';
+            event.color = course.color;
+            return event;
+        });
+    }
+
+    return event;
+};
+
+/**
+ * retrieves the next date for given weekly courseTimes
+ * @param courseTimes - the times of a course
+ * @return {String} - a formatted date string
+ */
+const getNextEventForCourseTimes = (courseTimes) => {
+    if ((courseTimes || []).length <= 0) return;
+
+    let nextWeekdays = _.map(courseTimes, (ct, i) => {
+        let weekDayIdentifier = ct.weekday + 1; // moment starts on sunday
+
+        // if current week's weekday is over, take the one next week
+        if (moment().day() > weekDayIdentifier) weekDayIdentifier += 7;
+
+        // has to store index, because .indexOf with moment arrays does not work
+        return {date: moment().day(weekDayIdentifier), index: i};
+    });
+
+    // find nearest day from now
+    let minDate = _.minBy(nextWeekdays, (w) => w.date);
+    return moment(minDate.date).format("DD.MM.YYYY") + " " + moment.utc(courseTimes[minDate.index].startTime, "x").format("HH:mm");
+};
+
+if (!Date.prototype.toLocalISOString) {
+    (function() {
+
+        function pad(number) {
+            if (number < 10) {
+                return '0' + number;
+            }
+            return number;
+        }
+
+        Date.prototype.toLocalISOString = function() {
+            return this.getFullYear() +
+                '-' + pad(this.getMonth() + 1) +
+                '-' + pad(this.getDate()) +
+                'T' + pad(this.getHours()) +
+                ':' + pad(this.getMinutes()) +
+                ':' + pad(this.getSeconds()) +
+                '.' + (this.getMilliseconds() / 1000).toFixed(3).slice(2, 5) +
+                'Z';
+        };
+
+    }());
+}
 
 module.exports = {
     getIsoWeekdayForNumber,
     getWeekdayForNumber,
     getNumberForWeekday,
     getNumberForFullCalendarWeekday,
-    createRecurringEvents
+    createRecurringEvents,
+    mapRecurringEvent,
+    mapEventProps,
+    getNextEventForCourseTimes
 };

@@ -21,6 +21,9 @@ const baseScripts = [
     './static/scripts/chosen/chosen.jquery.min.js',
     './static/scripts/base.js',
     './static/scripts/piwik/piwik.js',
+    './static/scripts/toggle/bootstrap-toggle.min.js',
+    './static/scripts/mailchimp/mailchimp.js',
+    './static/scripts/qrcode/kjua-0.1.1.min.js'
 ];
 
 /**

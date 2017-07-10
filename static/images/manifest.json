@@ -1,0 +1,21 @@
+{
+    "name": "Schul-Cloud",
+    "short_name": "Schul-Cloud",
+    "icons": [
+        {
+            "src": "/images/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/images/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "/?homescreen=1",
+    "scope": "/",
+    "theme_color": "#b10438",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}

@@ -3,9 +3,8 @@
     {{#content "styles" mode="append"}}
         <link rel="stylesheet" href="/styles/courses/course.css"/>
     {{/content}}
-
     {{#content "scripts" mode="append"}}
-        <script src="/scripts/lessons.js" type="text/javascript" defer></script>
+        <script src="/scripts/topic.js" defer></script>
     {{/content}}
 
     {{#content "page"}}
@@ -13,13 +12,13 @@
         <section class="section-course">
             {{#each contents}}
                 {{#unless hidden}}
-                <div class="row">
-                    <div class="col-md-6 col-sm-10 col-xs-12">
-                        <div class="content-block">
-                            {{> (lookup . 'component') }}
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="content-block">
+                                {{> (lookup . 'component') }}
+                            </div>
                         </div>
                     </div>
-                </div>
                 {{/unless}}
             {{/each}}
 
@@ -66,8 +65,12 @@
             {{#userHasPermission "COURSE_EDIT"}}
                 <div class="row padding-top">
                     <div class="col-sm-12">
-                        <a href="/courses/{{../courseId}}/topics/{{../_id}}/edit" class="btn btn-add btn-primary">Stunde
+                        <a href="/courses/{{../courseId}}/topics/{{../_id}}/edit" class="btn btn-add btn-primary">Thema
                             bearbeiten</a>
+                        <a href="#"
+                           data-href="{{../_id}}"
+                           data-courseId="{{../courseId}}"
+                           class="btn btn-add btn-secondary btn-create-share">Thema mit anderen Lehrern teilen</a>
                     </div>
                 </div>
             {{/userHasPermission}}
@@ -84,6 +87,12 @@
                             Löschen
                         </button>
                     </div>
+                {{/content}}
+            {{/embed}}
+
+            {{#embed "lib/components/modal-form" class="share-modal"}}
+                {{#content "fields"}}
+                    {{> "topic/forms/form-share"}}
                 {{/content}}
             {{/embed}}
 

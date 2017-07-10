@@ -1,5 +1,5 @@
 @import './colors';
-@import './bootstrap/scss/bootstrap';
+@import './bootstrap/scss/bootstrap-flex';
 
 body {
     background: white !important;
@@ -24,6 +24,29 @@ aside.nav-sidebar {
     @include media-breakpoint-down(xs) {
         width: 100%;
         position: relative;
+    }
+
+    .sc-branding {
+        padding: 0.7rem;
+        font-size: 25px;
+        background: $colorHPIRed;
+        color: whitesmoke;
+        i {
+            margin-right: 0.8rem;
+            padding-left: 0.2rem;
+            @include media-breakpoint-down(md) {
+                margin-right: 0;
+            }
+        }
+        span {
+            @include media-breakpoint-down(md) {
+                display: none;
+            }
+
+            @include media-breakpoint-down(xs) {
+                display: inline-block;
+            }
+        }
     }
 
     nav {
@@ -159,6 +182,10 @@ aside.nav-sidebar {
 header {
     width:100%;
     float:left;
+}
+
+.window-inline .content-wrapper {
+    padding: 20px !important;
 }
 
 .content-wrapper {
@@ -346,6 +373,17 @@ footer {
     }
 }
 
+.qr-code-action {
+    .btn {
+        border: none;
+        line-height: 30px;
+    }
+
+    .dropdown-menu {
+        padding: 15px;
+        padding-bottom: 9px;
+    }
+}
 
 .notification-dropdown {
     .btn {

@@ -1,4 +1,8 @@
-$(document).ready(function () {
+function getCurrentDir() {
+    return $('.section-upload').data('path');
+}
+
+$(document).ready(function() {
     var $form = $(".form-upload");
     var $progressBar = $('.progress-bar');
     var $progress = $progressBar.find('.bar');
@@ -8,6 +12,8 @@ $(document).ready(function () {
     var $editModal = $('.edit-modal');
     var $deleteModal = $('.delete-modal');
     var $moveModal = $('.move-modal');
+
+
 
     var isCKEditor = window.location.href.indexOf('CKEditor=') != -1;
 
@@ -34,10 +40,9 @@ $(document).ready(function () {
         return fullPath.split("/").slice(0, -1).join('/');
     }
 
-    function getCurrentDir() {
-        return $('.section-upload').data('path');
-    }
 
+    let progressBarActive = false;
+    let finishedFilesSize = 0;
     $form.dropzone({
         accept: function (file, done) {
             // get signed url before processing the file
@@ -45,16 +50,9 @@ $(document).ready(function () {
 
             var currentDir = getCurrentDir();
 
-            // uploading whole folders
-            if (file.fullPath) {
-                var separator = currentDir ? currentDir + '/' : '';
-                currentDir = separator + getDirname(file.fullPath);
-            }
-
             $.post('/files/file', {
                 path: currentDir + file.name,
                 type: file.type
-
             }, function (data) {
                 file.signedUrl = data.signedUrl;
                 done();
@@ -66,14 +64,19 @@ $(document).ready(function () {
         init: function () {
             // this is called on per-file basis
             this.on("processing", function (file) {
+                if(!progressBarActive) {
+                    $progress.css('width', '0%');
+
+                    $form.fadeOut(50, function () {
+                        $progressBar.fadeIn(50);
+                    });
+
+                    progressBarActive = true;
+                }
+
                 this.options.url = file.signedUrl.url;
                 this.options.headers = file.signedUrl.header;
-                $progress.css('width', '0%');
-                $form.fadeOut(50, function () {
-                    $progressBar.fadeIn(50);
-                });
             });
-
 
             this.on("sending", function (file, xhr, formData) {
                 var _send = xhr.send;
@@ -82,21 +85,28 @@ $(document).ready(function () {
                 };
             });
 
-            this.on("totaluploadprogress", function (progress) {
-                $progress.stop().animate({'width': progress + '%'}, {
+            this.on("totaluploadprogress", function (progress, total, uploaded) {
+                const realProgress = (uploaded + finishedFilesSize) / ((total + finishedFilesSize) / 100);
+
+                $progress.stop().animate({'width': realProgress + '%'}, {
                     step: function (now) {
                         $percentage.html(Math.ceil(now) + '%');
-                    },
-                    complete: function () {
-                        $progressBar.fadeOut(50, function () {
-                            $form.fadeIn(50);
-                            reloadFiles();
-                        });
                     }
                 });
             });
 
+            this.on("queuecomplete", function (file, response) {
+                progressBarActive = false;
+                finishedFilesSize = 0;
+
+                $progressBar.fadeOut(50, function () {
+                    $form.fadeIn(50);
+                    reloadFiles();
+                });
+            });
+
             this.on("success", function (file, response) {
+                finishedFilesSize += file.size;
                 this.removeFile(file);
             });
 
@@ -118,6 +128,9 @@ $(document).ready(function () {
         }
     });
 
+    $('a[data-method="download"]').on('click', function (e) {
+        e.stopPropagation();
+    });
 
     $('a[data-method="delete"]').on('click', function (e) {
         e.stopPropagation();
@@ -127,7 +140,6 @@ $(document).ready(function () {
         $deleteModal.modal('show');
         $deleteModal.find('.modal-title').text("Bist du dir sicher, dass du '" + $buttonContext.data('file-name') + "' löschen möchtest?");
 
-
         $deleteModal.find('.btn-submit').unbind('click').on('click', function () {
             $.ajax({
                 url: $buttonContext.attr('href'),
@@ -136,7 +148,6 @@ $(document).ready(function () {
                     name: $buttonContext.data('file-name'),
                     dir: $buttonContext.data('file-path')
                 },
-
                 success: function (result) {
                     reloadFiles();
                 },
@@ -150,45 +161,46 @@ $(document).ready(function () {
     });
 
     $('a[data-method="move"]').on('click', function(e) {
-		e.stopPropagation();
-		e.preventDefault();
-		var $buttonContext = $(this);
+        e.stopPropagation();
+        e.preventDefault();
+        var $buttonContext = $(this);
 
-		$moveModal.modal('show');
-        $moveModal.find('.modal-title').text("Wohin möchtest du '" + $buttonContext.data('file-name') + "' verschieben?");
+        $moveModal.modal('show');
+
 
         $moveModal.find('.btn-submit').unbind('click').on('click', function() {
-			$.ajax({
-				url: $buttonContext.attr('href'),
-				type: 'MOVE',
-				data: {
-					name: $buttonContext.data('file-name'),
-                    destination: $moveModal.find('[class="chosen-single"]').text(),
-                    dir: $buttonContext.data('file-path'),
-				},
-				success: function(result) {
-					reloadFiles();
-				},
-				error: showAJAXError
-			});
-		});
-	});
+            $.ajax({
+                url: $buttonContext.attr('href'),
+                type: 'MOVE',
+                data: {
+                    name: $buttonContext.data('file-name'),
+                    dir: $buttonContext.data('file-path')
+                },
+                success: function(result) {
+                    reloadFiles();
+                },
+                error: showAJAXError
+            });
+        });
+    });
 
      $moveModal.find('.close, .btn-close').on('click', function() {
-		 $moveModal.modal('hide');
-	 });
+        $moveModal.modal('hide');
+     });
+
+
     $('.create-directory').on('click', function () {
         $editModal.modal('show');
     });
 
     $('.card.file').on('click', function () {
-        if (isCKEditor) returnFileUrl($(this).data('href'));
+        if (isCKEditor) returnFileUrl($(this).data('file-name'));
     });
 
     $('.card.file .title').on('click', function (e) {
         if (isCKEditor) {
             e.preventDefault();
-            returnFileUrl($(this).closest('.card.file').data('href'));
+            returnFileUrl($(this).closest('.card.file').data('file-name'));
         }
     });
 
@@ -202,31 +214,174 @@ $(document).ready(function () {
         }).fail(showAJAXError);
     });
 
+
+    $modals.find('.close, .btn-close').on('click', function () {
+        $modals.modal('hide');
+
+    });
+
+    var returnFileUrl = (fileName) => {
+        var fullUrl = '/files/file?path=' + getCurrentDir() + fileName;
+        var funcNum = getQueryParameterByName('CKEditorFuncNum');
+        window.opener.CKEDITOR.tools.callFunction(funcNum, fullUrl);
+        window.close();
+    };
+
     $modals.find('.close, .btn-close').on('click', function () {
         $modals.modal('hide');
     });
 
-    var returnFileUrl = (fileUrl) => {
-        var funcNum = getQueryParameterByName('CKEditorFuncNum');
-        window.opener.CKEDITOR.tools.callFunction(funcNum, fileUrl);
-        window.close();
-    };
+    $('.btn-file-share').click(function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        let path = $(this).attr('data-file-path');
+        let $shareModal = $('.share-modal');
+        $.ajax({
+            type: "POST",
+            url: "/files/permissions/",
+            data: {
+                key: path
+            },
+            success: function(data) {
+                let target = `files/file?path=${data.key}&shared=true`;
+                $.ajax({
+                    type: "POST",
+                    url: "/link/",
+                    data: {
+                        target: target
+                    },
+                    success: function(data) {
+                        populateModalForm($shareModal, {
+                            title: 'Einladungslink generiert!',
+                            closeLabel: 'Schließen',
+                            submitLabel: 'Speichern',
+                            fields: {invitation: data.newUrl}
+                        });
+                        $shareModal.find('.btn-submit').remove();
+                        $shareModal.find("input[name='invitation']").click(function () {
+                            $(this).select();
+                        });
+
+                        $shareModal.modal('show');
+
+                    }
+                });
+            }
+        });
+    });
 
 });
+var $openModal = $('.open-modal');
 
-function fileViewer(filetype, file) {
+function videoClick(e) {
+    e.stopPropagation();
+    e.preventDefault();
+}
+
+function fileViewer(filetype, file, key) {
+    $('#my-video').css("display","none");
     switch (filetype) {
-        case 'image/'+filetype.substr(6, filetype.length) :
-            return ('<img src= "/files/file?download=1&file='+file+'">');
+        case 'application/pdf':
+            $('#file-view').hide();
+            var win = window.open('/files/file?file='+file, '_blank');
+            win.focus();
             break;
-        case 'audio/mp3':
-            return '<audio autoplay controls><source src= "/files/file?download=1&file='+file+'" type="audio/mpeg"> </audio>';
+
+        case 'image/'+filetype.substr(6) :
+            $('#file-view').css('display','');
+            $('#picture').attr("src", '/files/file?file='+file);
             break;
-        case 'video/mp4':
-            return '<video autoplay controls><source src= "/files/file?download=1&file='+file+'" type="video/mp4"></video>'
+
+        case 'audio/'+filetype.substr(6):
+        case 'video/'+filetype.substr(6):
+            $('#file-view').css('display','');
+            videojs('my-video').ready(function () {
+                this.src({type: filetype, src: '/files/file?file='+file});
+            });
+            $('#my-video').css("display","");
             break;
+
+        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':     //.docx
+        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':           //.xlsx
+        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':   //.pptx
+        case 'application/vnd.ms-powerpoint':                                               //.ppt
+        case 'application/vnd.ms-excel':                                                    //.xlx
+        case 'application/vnd.ms-word':                                                     //.doc
+        //todo: msviewer nimmt gültige signed URL nicht an
+        /**    $('#file-view').css('display','');
+         var msviewer = "https://view.officeapps.live.com/op/embed.aspx?src=";
+         $openModal.find('.modal-title').text("Möchtest du diese Datei mit dem externen Dienst Microsoft Office Online ansehen?");
+         var currentDir = getCurrentDir();
+
+         $.post('/files/file??download=1&file=', {
+                path: currentDir + file,
+                type: filetype,
+                action: "getObject"
+            }, function (data) {
+                var url = data.signedUrl.url;
+                url = url.replace(/&/g, "%26");
+                console.log(url);
+                openInIframe(msviewer+url);
+            })
+         .fail(showAJAXError);
+         break;**/
+        case 'text/plain': //only in Google Docs Viewer                                     //.txt
+            //case 'application/x-zip-compressed':                                                //.zip
+            $('#file-view').css('display','');
+            var gviewer ="https://docs.google.com/viewer?url=";
+            $openModal.find('.modal-title').text("Möchtest du diese Datei mit dem externen Dienst Google Docs Viewer ansehen?");
+            var currentDir = getCurrentDir();
+
+            $.post('/files/file?file=', {
+                path: currentDir + file,
+                type: filetype,
+                action: "getObject"
+            }, function (data) {
+                var url = data.signedUrl.url;
+                url = url.replace(/&/g, "%26");
+                console.log(url);
+                openInIframe(gviewer+url+"&embedded=true");
+            })
+                .fail(showAJAXError);
+            break;
+
+        default:
+            $('#file-view').css('display','');
+            $('#link').html('<a class="link" href="/files/file?file='+file+'" target="_blank">Datei extern öffnen</a>');
+            $('#link').css("display","");
     }
-    return "Nicht unterstützt";
+}
+
+//show Google-Viewer/Office online in iframe, after user query (and set cookie)
+function openInIframe(source){
+    $("input.box").each(function() {
+        var mycookie = $.cookie($(this).attr('name'));
+        if (mycookie && mycookie == "true") {
+            $(this).prop('checked', mycookie);
+            $('#link').html('<iframe class="vieweriframe" src='+source+'>' +
+                '<p>Dein Browser unterstützt dies nicht.</p></iframe>');
+            $('#link').css("display","");
+        }
+        else {
+            $openModal.modal('show');
+            $openModal.find('.btn-submit').unbind('click').on('click', function () {
+                $.cookie($("input.box").attr("name"), $("input.box").prop('checked'), {
+                    path: '/',
+                    expires: 365
+                });
+
+                $('#link').html('<iframe class="vieweriframe" src='+source+'>' +
+                    '<p>Dein Browser unterstützt dies nicht.</p></iframe>');
+                $('#link').css("display","");
+                $openModal.modal('hide');
+            });
+
+            $openModal.find('.close, .btn-close').unbind('click').on('click', function () {
+                $openModal.modal('hide');
+                window.location.href = "#_";
+            });
+        }
+    });
 }
 
 function writeFileSizePretty(filesize) {
@@ -237,7 +392,6 @@ function writeFileSizePretty(filesize) {
         filesize = Math.round((filesize / 1024) * 100) / 100;
         iterator++;
     }
-
     switch (iterator) {
         case 0:
             unit = "B";

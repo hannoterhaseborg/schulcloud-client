@@ -5,36 +5,8 @@
 const express = require('express');
 const router = express.Router();
 const api = require('../api');
+const moment = require("moment");
 const recurringEventsHelper = require('../helpers/recurringEvents');
-
-/**
- * handle recurring events for fullcalendar.js
- * @param event {Event} - a event which could contain a recurring value
- * @returns events [] - new set of events
- */
-const mapRecurringEvent = (event) => {
-    if (event.included && event.included[0].attributes.freq == 'WEEKLY') {
-        return recurringEventsHelper.createRecurringEvents(event);
-    }
-
-    return [event];
-};
-
-/**
- * maps properties of a event to fit fullcalendar, e.g. url and color
- * @param event
- */
-const mapEventProps = (event, req) => {
-    if (event["x-sc-courseId"]) {
-        return api(req).get('/courses/' + event["x-sc-courseId"]).then(course => {
-            event.url = '/courses/' + course._id;
-            event.color = course.color;
-            return event;
-        });
-    }
-
-    return event;
-};
 
 // secure routes
 router.use(require('../helpers/authentication').authChecker);
@@ -52,8 +24,8 @@ router.get('/events/', function (req, res, next) {
             all: true
         }
     }).then(events => {
-        Promise.all(events.map(event => mapEventProps(event, req))).then(events => {
-            events = [].concat.apply([], events.map(mapRecurringEvent));
+        Promise.all(events.map(event => recurringEventsHelper.mapEventProps(event, req))).then(events => {
+            events = [].concat.apply([], events.map(recurringEventsHelper.mapRecurringEvent));
             return res.json(events);
         });
     }).catch(err => {
@@ -62,6 +34,16 @@ router.get('/events/', function (req, res, next) {
 });
 
 router.post('/events/', function (req, res, next) {
+    req.body.startDate = moment(req.body.startDate, 'DD.MM.YYYY HH:mm')._d.toLocalISOString();
+    req.body.endDate = moment(req.body.endDate, 'DD.MM.YYYY HH:mm')._d.toLocalISOString();
+
+    // filter params
+    if (req.body.courseId && req.body.courseId !== '') {
+        req.body.scopeId = req.body.courseId;
+    } else {
+        delete req.body.courseId;
+    }
+
    api(req).post('/calendar/', {json: req.body}).then(event => {
       res.redirect('/calendar');
    });
@@ -76,9 +58,13 @@ router.delete('/events/:eventId', function (req, res, next) {
 });
 
 router.put('/events/:eventId', function (req, res, next) {
+    req.body.startDate = moment(req.body.startDate, 'DD.MM.YYYY HH:mm')._d.toLocalISOString();
+    req.body.endDate = moment(req.body.endDate, 'DD.MM.YYYY HH:mm')._d.toLocalISOString();
+
     api(req).put('/calendar/' + req.params.eventId, {
         json: req.body
     }).then(_ => {
+
         res.redirect('/calendar/');
     }).catch(err => {
         next(err);

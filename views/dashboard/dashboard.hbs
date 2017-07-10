@@ -14,42 +14,73 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <h5>Stundenplan</h5>
-                                    <time class="selected-date">{{eventsDate}}</time>
+                                    <time class="selected-date">Donnerstag, 13. Juli 2017</time>
                                 </div>
                             </div>
 
                             <div class="container-fluid timetable">
                                 <div class="row lesson-cards">
                                     <div>
-                                        {{#each events}}
-                                            <a class="lesson-card"{{#if url}}href="{{url}}"{{/if}}
-                                               style="width: {{style.width}}%; left: {{style.left}}%;">
-                                                <div class="card card-block" style="{{#if color}}background-color: {{color}};
-                                                        border-color: {{color}};{{/if}}">
-                                                    <time class="lesson-time">{{comment}}</time>
-                                                    <h3 class="card-title">{{title}}</h3>
-                                                    <p class="card-text">{{location}}</p>
-                                                </div>
-                                            </a>
-                                        {{/each}}
+                                        <a class="lesson-card" style="width: 31.25%;left: 68.75%;">
+                                            <div class="card card-block" style="">
+                                                <time class="lesson-time">13:30 - 17:00</time>
+                                                <h3 class="card-title">Bachelorpodium</h3>
+                                                <p class="card-text">Hörsaal 1</p>
+                                            </div>
+                                        </a>
+                                        <a class="lesson-card" href="/courses/5900a69f7100d4367d8fad39" style="width: 18.75%; left: 25%;">
+                                            <div class="card card-block" style="background-color: #f4e6cb;
+                                                        border-color: #f4e6cb;">
+                                                <time class="lesson-time">10:00 - 11:30</time>
+                                                <h3 class="card-title">Deutsch</h3>
+                                                <p class="card-text">Raum 1.2</p>
+                                            </div>
+                                        </a>
+                                        <a class="lesson-card" href="/courses/5928463564d87543e48310ee" style="width: 18.75%; left: 0%;">
+                                            <div class="card card-block" style="background-color: #d8fcc2;
+                                                        border-color: #d8fcc2;">
+                                                <time class="lesson-time">08:00 - 09:30</time>
+                                                <h3 class="card-title">Mathe</h3>
+                                                <p class="card-text">Raum 2.4</p>
+                                            </div>
+                                        </a>
                                     </div>
                                 </div>
 
                                 <div class="row">
                                     <div class="timeline">
                                         <div class="container-fluid">
-                                                <table style="width:100%">
-                                                    <tr>
-                                                        {{#each hours}}
-                                                            <td style="width:10%">
-                                                                <div class="tick">{{this}}.00</div>
-                                                            </td>
-                                                        {{/each}}
-                                                    </tr>
-                                                </table>
+                                            <table style="width:100%">
+                                                <tbody><tr>
+                                                    <td style="width:10%">
+                                                        <div class="tick">8.00</div>
+                                                    </td>
+                                                    <td style="width:10%">
+                                                        <div class="tick">9.00</div>
+                                                    </td>
+                                                    <td style="width:10%">
+                                                        <div class="tick">10.00</div>
+                                                    </td>
+                                                    <td style="width:10%">
+                                                        <div class="tick">11.00</div>
+                                                    </td>
+                                                    <td style="width:10%">
+                                                        <div class="tick">12.00</div>
+                                                    </td>
+                                                    <td style="width:10%">
+                                                        <div class="tick">13.00</div>
+                                                    </td>
+                                                    <td style="width:10%">
+                                                        <div class="tick">14.00</div>
+                                                    </td>
+                                                    <td style="width:10%">
+                                                        <div class="tick">15.00</div>
+                                                    </td>
+                                                </tr>
+                                                </tbody></table>
                                         </div>
-                                        <div class="current-time" style="width:{{currentTimePercentage}}%;">
-                                            <span>{{currentTime}}</span>
+                                        <div class="current-time" style="width:34.583333333333336%;">
+                                            <span>10:46</span>
                                         </div>
                                     </div>
                                 </div>

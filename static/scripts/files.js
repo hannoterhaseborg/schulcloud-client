@@ -171,9 +171,10 @@ $(document).ready(function() {
         $moveModal.find('.btn-submit').unbind('click').on('click', function() {
             $.ajax({
                 url: $buttonContext.attr('href'),
-                type: 'MOVE',
+                type: 'patch',
                 data: {
                     name: $buttonContext.data('file-name'),
+                    destination: getCurrentDir()+$moveModal.find('.chosen-single')[0].innerText,
                     dir: $buttonContext.data('file-path')
                 },
                 success: function(result) {
@@ -320,7 +321,6 @@ function fileViewer(filetype, file, key) {
             }, function (data) {
                 var url = data.signedUrl.url;
                 url = url.replace(/&/g, "%26");
-                console.log(url);
                 openInIframe(msviewer+url);
             })
          .fail(showAJAXError);
@@ -339,7 +339,6 @@ function fileViewer(filetype, file, key) {
             }, function (data) {
                 var url = data.signedUrl.url;
                 url = url.replace(/&/g, "%26");
-                console.log(url);
                 openInIframe(gviewer+url+"&embedded=true");
             })
                 .fail(showAJAXError);

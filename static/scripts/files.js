@@ -273,14 +273,14 @@ function drop(ev) {
     ev.preventDefault();
     var name = ev.dataTransfer.getData("name");
     var destination = ev.target.innerText;
-    var currentdir = getCurrentDir();
+    var currentDir = getCurrentDir();
     name = name.substring(0, name.indexOf('\n'));
     destination = destination.substr(1);
-    currentdir = currentdir.substring(currentdir.indexOf('/') + 1 );
-    currentdir = currentdir.substring(currentdir.indexOf('/') + 1 );
-    currentdir = '/'+currentdir.substring(0, currentdir.length -1 );
+    currentDir = currentDir.substring(currentDir.indexOf('/') + 1 );
+    currentDir = currentDir.substring(currentDir.indexOf('/') + 1 );
+    currentDir = '/'+currentDir.substring(0, currentDir.length -1 );
 
-    movefile(name, getCurrentDir()+destination, currentdir);
+    movefile(name, getCurrentDir()+destination, currentDir);
 }
 
 function movefile(name, destination, dir){
@@ -355,10 +355,10 @@ function fileViewer(filetype, file, key) {
             $('#file-view').css('display','');
             var gviewer ="https://docs.google.com/viewer?url=";
             $openModal.find('.modal-title').text("Möchtest du diese Datei mit dem externen Dienst Google Docs Viewer ansehen?");
-            var currentDir = getCurrentDir();
-
+            file = file.substring(file.indexOf('/') + 1 );
+            file = file.substring(file.indexOf('/') + 1 );
             $.post('/files/file?file=', {
-                path: currentDir + file,
+                path: getCurrentDir() + file,
                 type: filetype,
                 action: "getObject"
             }, function (data) {

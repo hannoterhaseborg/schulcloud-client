@@ -167,21 +167,8 @@ $(document).ready(function() {
 
         $moveModal.modal('show');
 
-
         $moveModal.find('.btn-submit').unbind('click').on('click', function() {
-            $.ajax({
-                url: $buttonContext.attr('href'),
-                type: 'patch',
-                data: {
-                    name: $buttonContext.data('file-name'),
-                    destination: getCurrentDir()+$moveModal.find('.chosen-single')[0].innerText,
-                    dir: $buttonContext.data('file-path')
-                },
-                success: function(result) {
-                    reloadFiles();
-                },
-                error: showAJAXError
-            });
+            movefile($buttonContext.data('file-name'),getCurrentDir()+$moveModal.find('.chosen-single')[0].innerText,$buttonContext.data('file-path'));
         });
     });
 
@@ -273,6 +260,44 @@ $(document).ready(function() {
 
 });
 var $openModal = $('.open-modal');
+
+function dragStart(ev) {
+    ev.dataTransfer.setData("name", ev.target.outerText);
+}
+
+function allowDrop(ev) {
+    ev.preventDefault();
+}
+
+function drop(ev) {
+    ev.preventDefault();
+    var name = ev.dataTransfer.getData("name");
+    var destination = ev.target.innerText;
+    var currentdir = getCurrentDir();
+    name = name.substring(0, name.indexOf('\n'));
+    destination = destination.substr(1);
+    currentdir = currentdir.substring(currentdir.indexOf('/') + 1 );
+    currentdir = currentdir.substring(currentdir.indexOf('/') + 1 );
+    currentdir = '/'+currentdir.substring(0, currentdir.length -1 );
+
+    movefile(name, getCurrentDir()+destination, currentdir);
+}
+
+function movefile(name, destination, dir){
+    $.ajax({
+        url: '/files/file/',//$buttonContext.attr('href'),
+        type: 'PATCH',
+        data: {
+            name,
+            destination,
+            dir
+        },
+        success: function(result) {
+            reloadFiles();
+        },
+        error: showAJAXError
+    });
+}
 
 function videoClick(e) {
     e.stopPropagation();

@@ -251,6 +251,27 @@ router.delete('/file', function (req, res, next) {
     });
 });
 
+// move file
+router.patch('/file', function (req, res, next) {
+    const {name, destination, dir} = req.body;
+
+    const basePath = getStorageContext(req, res, {url: req.get('Referrer'), dir});
+    const data = {
+        path: basePath + name,
+        destination: basePath + destination + name,
+        fileType: null,
+        action: null
+    };
+
+    api(req).patch('/fileStorage/', {
+        qs: data
+    }).then(_ => {
+        res.sendStatus(200);
+    }).catch(err => {
+        res.status((err.statusCode || 500)).send(err);
+    });
+});
+
 
 // get file
 router.get('/file', function (req, res, next) {
@@ -283,26 +304,7 @@ router.get('/file', function (req, res, next) {
     });
 });
 
-// move file
-router.patch('/file', function (req, res, next) {
-    const {name, destination, dir} = req.body;
 
-    const basePath = getStorageContext(req, res, {url: req.get('Referrer'), dir});
-    const data = {
-        path: basePath + name,
-        destination: basePath + destination + name,
-        fileType: null,
-        action: null
-    };
-
-    api(req).patch('/fileStorage/', {
-        qs: data
-    }).then(_ => {
-        res.sendStatus(200);
-    }).catch(err => {
-        res.status((err.statusCode || 500)).send(err);
-    });
-});
 
 // create directory
 router.post('/directory', function (req, res, next) {

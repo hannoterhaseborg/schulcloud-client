@@ -53,25 +53,6 @@
                 </div>
             </section>
 
-            <script>
-                function dragStart(ev) {
-                    console.log(ev);
-                    ev.dataTransfer.setData("text", event.target.id);
-                }
-
-                function allowDrop(ev) {
-                    ev.preventDefault();
-                }
-
-                function drop(ev) {
-                    ev.preventDefault();
-                    var name = ev.dataTransfer.getData("text");
-                    var destination = ev.target.innerText;
-                    //var name = "";
-                    console.log(name);
-                    //console.log(ev);
-                }
-            </script>
 
             <section class="directories">
                 <div class="row">

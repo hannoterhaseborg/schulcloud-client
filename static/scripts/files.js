@@ -337,10 +337,9 @@ function fileViewer(filetype, file, key) {
         /**    $('#file-view').css('display','');
          var msviewer = "https://view.officeapps.live.com/op/embed.aspx?src=";
          $openModal.find('.modal-title').text("Möchtest du diese Datei mit dem externen Dienst Microsoft Office Online ansehen?");
-         var currentDir = getCurrentDir();
-
-         $.post('/files/file??download=1&file=', {
-                path: currentDir + file,
+         file = file.substring(file.lastIndexOf('/')+1);
+         $.post('/files/file?file=', {
+                path: getCurrentDir() + file,
                 type: filetype,
                 action: "getObject"
             }, function (data) {
@@ -355,8 +354,7 @@ function fileViewer(filetype, file, key) {
             $('#file-view').css('display','');
             var gviewer ="https://docs.google.com/viewer?url=";
             $openModal.find('.modal-title').text("Möchtest du diese Datei mit dem externen Dienst Google Docs Viewer ansehen?");
-            file = file.substring(file.indexOf('/') + 1 );
-            file = file.substring(file.indexOf('/') + 1 );
+            file = file.substring(file.lastIndexOf('/')+1);
             $.post('/files/file?file=', {
                 path: getCurrentDir() + file,
                 type: filetype,

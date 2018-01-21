@@ -9,69 +9,7 @@ const api = require('../api');
 router.use(authHelper.authChecker);
 
 router.get('/', function (req, res, next) {
-
-    const query = req.query.q;
-    const action = 'addToLesson';
-
-    const itemsPerPage = (req.query.limit || 9);
-    const currentPage = parseInt(req.query.p) || 1;
-
-    // Featured Content
-    if (!query) {
-        return Promise.all([
-            api(req)({
-                uri: '/content/resources/',
-                qs: {
-                    featuredUntil: {
-                        $gte: new Date()
-                    }
-                },
-                json: true
-            }),
-            api(req)({
-                uri: '/content/resources/',
-                qs: {
-                    $sort: {
-                        clickCount: -1
-                    },
-                    $limit: 3
-                },
-                json: true
-            })
-        ]).then(([featured, trending]) => {
-            return res.render('content/store', {
-                title: 'Materialien',
-                featuredContent: featured.data,
-                trendingContent: trending.data,
-                totalCount: trending.total,
-                action
-            });
-        });
-    // Search Results
-    } else {
-        return api(req)({
-            uri: '/content/search/',
-            qs: {
-                _all: { $match: query },
-                $limit: itemsPerPage,
-                $skip: itemsPerPage * (currentPage - 1),
-            },
-            json: true
-        }).then(searchResults => {
-            const pagination = {
-                currentPage,
-                numPages: Math.ceil(searchResults.total / itemsPerPage),
-                baseUrl: req.baseUrl + '/?' + 'q=' + query + '&p={{page}}'
-            };
-            return res.render('content/search-results', {
-                title: 'Materialien',
-                query: query,
-                searchResults: searchResults,
-                pagination,
-                action
-            });
-        });
-    }
+    res.renderVue('main.vue', {text: 'Hi'});
 });
 
 router.get('/:id', function (req, res, next) {

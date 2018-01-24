@@ -9,7 +9,9 @@ const api = require('../api');
 router.use(authHelper.authChecker);
 
 router.get('/', function (req, res, next) {
-    res.renderVue('main.vue', {text: 'Hi'});
+    return res.render('content/search-iframe', {
+        title: 'Materialien'
+    });
 });
 
 router.get('/:id', function (req, res, next) {

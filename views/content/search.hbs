@@ -1,0 +1,18 @@
+{{#extend "lib/loggedin" hideSearch="true"}}
+    {{#content "scripts" mode="append"}}
+        <script src="/vendor/contentSearchComponent.js" type="text/javascript" defer></script>
+    {{/content}}
+    {{#content "styles" mode="append"}}
+        <style>
+        content-search{
+            width: 100%;
+        }
+        .container-fluid{
+            max-width: 100% !important;
+        }
+        </style>
+    {{/content}}
+    {{#content "page"}}
+        <content-search/>
+    {{/content}}
+{{/extend}}

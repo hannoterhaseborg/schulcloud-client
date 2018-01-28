@@ -9,7 +9,7 @@ const api = require('../api');
 router.use(authHelper.authChecker);
 
 router.get('/', function (req, res, next) {
-    return res.render('content/search-iframe', {
+    return res.render('content/search', {
         title: 'Materialien'
     });
 });

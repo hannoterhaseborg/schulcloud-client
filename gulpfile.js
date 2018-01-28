@@ -145,12 +145,6 @@ gulp.task('vendor-assets', () => {
         .pipe(gulp.dest('./build/vendor'))
 })
 
-gulp.task('vue', function () {
-  return gulp.src('./vue/**/*.vue')
-    .pipe(vueify())
-    .pipe(gulp.dest('./build/vue'));
-});
-
 //clear build folder + smart cache
 gulp.task('clear', () => {
     gulp.src(['./build/*', './.gulp-changed-smart.json'], { read: false })
@@ -159,7 +153,7 @@ gulp.task('clear', () => {
 
 //run all tasks, processing changed files
 gulp.task('build-all', ['images', 'styles', 'fonts', 'scripts', 'base-scripts',
-                        'vendor-styles', 'vendor-scripts', 'vendor-assets', 'vue'])
+                        'vendor-styles', 'vendor-scripts', 'vendor-assets'])
 
 //watch and run corresponding task on change, process changed files only
 gulp.task('watch', ['build-all'], () => {

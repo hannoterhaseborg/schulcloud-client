@@ -15,22 +15,6 @@ const handlebarsWax = require('handlebars-wax');
 
 const app = express();
 
-const expressVue = require('express-vue');
-const vueOptions = {
-        rootPath: path.join(__dirname, 'vue'),
-        vue: {
-            head: {
-                meta: [{
-                    script: 'https://unpkg.com/vue'
-                }, {
-                    style: 'assets/rendered/style.css'
-                }]
-            }
-        }
-    };
-const expressVueMiddleware = expressVue.init(vueOptions);
-app.use(expressVueMiddleware);
-
 app.use(compression());
 app.set('trust proxy', true);
 const themeName = process.env.SC_THEME || 'default';

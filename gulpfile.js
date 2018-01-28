@@ -14,7 +14,6 @@ const count = require('gulp-count')
 const changed = require('gulp-changed-smart')
 const autoprefixer = require('gulp-autoprefixer')
 const header = require('gulp-header');
-const vueify = require('gulp-vueify')
 const cCSS = new cleancss()
 const fs = require('fs')
 const gulpif = require('gulp-if');
@@ -166,7 +165,6 @@ gulp.task('watch', ['build-all'], () => {
     gulp.watch(withTheme('./static/vendor/**/*.js'), ['vendor-scripts'])
     gulp.watch(['./static/vendor/**/*.*', '!./static/vendor/**/*.js',
                 '!./static/vendor/**/*.{css,sass,scss}'], ['vendor-assets'])
-    gulp.watch('./vue/**/*.vue', ['vue'])
 })
 
 //run this if only "gulp" is run on the commandline with no task specified
